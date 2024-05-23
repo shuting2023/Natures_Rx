@@ -1,20 +1,23 @@
-import pandas as pd
-import geopandas as gpd
-import os
-
+# Remove warnings 
 def remove_warnings(): 
     import warnings
     return warnings.filterwarnings("ignore", category=pd.core.common.SettingWithCopyWarning)
 
-def load_cleaning(file_path, key_lst, geo_data='Geolocation', csv_path = 'MHDS/Cleaned/mental_health_cleaned.csv'):
+# Remove the other chronic diseases
+# Remove missing values
+# Split Confidence Interval to two columns
+# output cleaned CSV if not in the folder
+def load_cleaning(file_path, key_lst, geo_data='Geolocation', 
+                  csv_path = 'MHDS/Cleaned/mental_health_cleaned.csv'):
+    import pandas as pd
+    import os
     raw_df = pd.read_csv(file_path)
-    # Remove the other chronic diseases
+    
     mh_lst = [x for x in raw_df.columns if 'mh' in x.lower()]
     df = raw_df[key_lst + mh_lst]
-    # Remove missing values
+    
     df.dropna(how='any', inplace=True)
-
-    # Split Confidence Interval
+                      
     df['Crude95CI_Low'] = df['MHLTH_Crude95CI'].apply(lambda x: x[1:].split(',')[0]).astype(float)
     df['Crude95CI_High'] = df['MHLTH_Crude95CI'].apply(lambda x: x[:-1].split(',')[1]).astype(float)
     df['Adjusted95CI_Low'] = df['MHLTH_Adj95CI'].apply(lambda x: x[1:].split(',')[0]).astype(float)
@@ -29,6 +32,9 @@ def load_cleaning(file_path, key_lst, geo_data='Geolocation', csv_path = 'MHDS/C
         df.to_csv(csv_path, index=False)
     return df
 
-def convert_geodf(df):
-    return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.Geolocation.apply(lambda x: x[1]), df.Geolocation.apply(lambda x: x[0])))
+# convert DataFrame to GeoDataFrame
+def convert_geodf(df, geo_col = 'Geolocation'):
+    import geopandas as gpd
+    return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[geo_col].apply(lambda x: x[1]), 
+                                                            df[geo_col].apply(lambda x: x[0])))
 
