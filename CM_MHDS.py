@@ -1,23 +1,36 @@
-# Remove warnings 
+import pandas as pd
+import geopandas as gpd
+import os
+
+# mh_file_path = 'MHDS/Original/500_Cities__City-level_Data__GIS_Friendly_Format___2017_release_20240514.csv'
+# key_lst = ['StateAbbr','PlaceName','PlaceFIPS','Population2010','Geolocation']
+
 def remove_warnings(): 
+    """
+    Remove the SettingWithCopyWarning
+    """
+    
     import warnings
     return warnings.filterwarnings("ignore", category=pd.core.common.SettingWithCopyWarning)
 
-# Remove the other chronic diseases
-# Remove missing values
-# Split Confidence Interval to two columns
-# output cleaned CSV if not in the folder
-def load_cleaning(file_path, key_lst, geo_data='Geolocation', 
-                  csv_path = 'MHDS/Cleaned/mental_health_cleaned.csv'):
-    import pandas as pd
-    import os
+def load_cleaning(file_path, key_lst, geo_data='Geolocation', csv_path = 'MHDS/Cleaned/mental_health_cleaned.csv'):
+    """
+    Load the raw data and clean the data
+    output the cleaned data to a csv file if not in the directory
+    :param file_path: str, file path
+    :param key_lst: list, key columns
+    :param geo_data: str, default 'Geolocation'
+    :param csv_path: str, default 'MHDS/Cleaned/mental_health_cleaned.csv'
+    :return: DataFrame
+    """
     raw_df = pd.read_csv(file_path)
-    
+    # Remove the other chronic diseases
     mh_lst = [x for x in raw_df.columns if 'mh' in x.lower()]
     df = raw_df[key_lst + mh_lst]
-    
+    # Remove missing values
     df.dropna(how='any', inplace=True)
-                      
+
+    # Split Confidence Interval
     df['Crude95CI_Low'] = df['MHLTH_Crude95CI'].apply(lambda x: x[1:].split(',')[0]).astype(float)
     df['Crude95CI_High'] = df['MHLTH_Crude95CI'].apply(lambda x: x[:-1].split(',')[1]).astype(float)
     df['Adjusted95CI_Low'] = df['MHLTH_Adj95CI'].apply(lambda x: x[1:].split(',')[0]).astype(float)
@@ -31,4 +44,5 @@ def load_cleaning(file_path, key_lst, geo_data='Geolocation',
     if os.path.exists(csv_path) == False:
         df.to_csv(csv_path, index=False)
     return df
+
 
