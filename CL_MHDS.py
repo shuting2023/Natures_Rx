@@ -32,9 +32,3 @@ def load_cleaning(file_path, key_lst, geo_data='Geolocation',
         df.to_csv(csv_path, index=False)
     return df
 
-# convert DataFrame to GeoDataFrame
-def convert_geodf(df, geo_col = 'Geolocation'):
-    import geopandas as gpd
-    return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[geo_col].apply(lambda x: x[1]), 
-                                                            df[geo_col].apply(lambda x: x[0])))
-
