@@ -1,6 +1,6 @@
 import pandas as pd
-import geopandas as gpd
 import os
+import warnings
 
 # mh_file_path = 'MHDS/Original/500_Cities__City-level_Data__GIS_Friendly_Format___2017_release_20240514.csv'
 # key_lst = ['StateAbbr','PlaceName','PlaceFIPS','Population2010','Geolocation']
@@ -10,9 +10,8 @@ def remove_warnings():
     """
     Remove the SettingWithCopyWarning
     """
-    
-    import warnings
-    return warnings.filterwarnings("ignore", category=pd.core.common.SettingWithCopyWarning)
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    warnings.filterwarnings('ignore', category=pd.core.common.SettingWithCopyWarning)
 
 def load_cleaning(file_path, key_lst, geo_data='Geolocation', csv_path = 'MHDS/Cleaned/mental_health_cleaned.csv'):
     """
@@ -45,5 +44,3 @@ def load_cleaning(file_path, key_lst, geo_data='Geolocation', csv_path = 'MHDS/C
     if os.path.exists(csv_path) == False:
         df.to_csv(csv_path, index=False)
     return df
-
-
