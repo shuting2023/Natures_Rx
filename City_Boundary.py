@@ -1,6 +1,8 @@
 
 import geopandas as gpd
-city_path = '500Cities_City_11082016/CityBoundaries.shp'
+import os
+
+# city_path = '500Cities_City_11082016/CityBoundaries.shp'
 
 def load_shp_convert_geo(file_path, num = 4326):
     """
@@ -20,8 +22,10 @@ def export_geojson(df, all_data = False, state_lst = ['CA'], important_lst =['NA
 
     if all_data:
         print('Warining: Using all data may take a long time to load into the Folium map.')
-        return df[important_lst].to_file('city_bound.geojson', driver='GeoJSON')
+        if os.path.exists(f'{state_lst}_city_bound.geojson') == False:
+            return df[important_lst].to_file('city_bound.geojson', driver='GeoJSON')
     else:
         partial_df = df[df['ST'].isin(state_lst)][important_lst]
         print('Output geoson file only contains data of the following states:', state_lst)
-        return partial_df.to_file('partial_city_bound.geojson', driver='GeoJSON')
+        if os.path.exists(f'{state_lst}_city_bound.geojson') == False:
+            return partial_df.to_file(f'{state_lst}_city_bound.geojson', driver='GeoJSON')
