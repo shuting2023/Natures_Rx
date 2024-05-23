@@ -26,6 +26,6 @@ def export_geojson(df, all_data = False, state_lst = ['CA'], important_lst =['NA
             return df[important_lst].to_file('city_bound.geojson', driver='GeoJSON')
     else:
         partial_df = df[df['ST'].isin(state_lst)][important_lst]
-        print('Output geoson file only contains data of the following states:', state_lst)
+        print('Output geojson file only contains data of the following states:', state_lst)
         if os.path.exists(f'{state_lst}_city_bound.geojson') == False:
             return partial_df.to_file(f'{state_lst}_city_bound.geojson', driver='GeoJSON')
