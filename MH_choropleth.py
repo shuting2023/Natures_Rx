@@ -23,7 +23,7 @@ def geo_centroid(df,state_lst):
     lon = df[df['StateAbbr'].isin(state_lst)]['Geolocation'].apply(lambda x: x[1]).mean()
     return lat, lon
 
-def folium_map(df, cent_lat, cent_lon, city_level = True,
+def choropleth_map(df, cent_lat, cent_lon, city_level = True,
                start = 7, color = 'YlGnBu', opacity = 0.7, l_weight = 1,
                geojson_path = 'partial_city_bound.geojson'):
     """
