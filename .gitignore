@@ -2,3 +2,4 @@
 partial_city_bound.geojson
 MHDS/Original/500Cities_City_11082016/*
 MHDS/Cleaned/mental_health_cleaned.csv
+__pycache__
