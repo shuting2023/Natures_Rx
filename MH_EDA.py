@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.express as px
 import altair as alt
+import os
 
 # mh_file_path = 'MHDS/Original/500_Cities__City-level_Data__GIS_Friendly_Format___2017_release_20240514.csv'
 
@@ -34,6 +35,15 @@ def mh_plotly_treemap(df, city_level = False, path_lst = [px.Constant('US'),'Sta
     )
     fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
     return fig
+
+def output_visuals(file, file_name, tohtml = False):
+    if os.path.exists(file_name):
+        print(f'{file_name} already exists.')
+    else:
+        if tohtml:
+            file.write_html(file_name)
+        else:
+            file.write_image(file_name)
 
 def mh_apply_boundary(df, new_geo_col, boundary, key_col = 'StateAbbr'):
     df[new_geo_col] = ['None' for x in range(len(df))]
