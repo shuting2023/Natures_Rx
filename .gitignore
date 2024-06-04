@@ -3,3 +3,6 @@ partial_city_bound.geojson
 __pycache__
 MHDS/Original/*.zip
 MHDS/Original/*.ZIP
+MergedDataset_copy.ipynb
+merged_greenspace_mh.csv
+uc_group_merged_greenspace_mh.csv

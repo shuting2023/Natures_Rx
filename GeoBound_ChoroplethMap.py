@@ -44,7 +44,7 @@ def us_division():
     return us_divisions
 
 
-def bound_load_file_output_geojson(file_path, full_state=False, cond_col='StateAbbr', cond_value=['CA'], convert_coordinate=False, convert_num=4326, output=False, output_folder='MHDS/', output_filename='gdf.geojson'):
+def bound_load_file_output_geojson(file_path, df, file = False, full_state=False, cond_col='StateAbbr', cond_value=['CA'], convert_coordinate=False, convert_num=4326, output=False, output_folder='MHDS/', output_filename='gdf.geojson'):
     """
     Load the boundary file and output the GeoJSON file.
     Convert the coordinate to WGS84 (standard coordinate) if convert_coordinate is True.
@@ -61,9 +61,11 @@ def bound_load_file_output_geojson(file_path, full_state=False, cond_col='StateA
     output_folder (str): if output is True, input folder name to output the file.
     output_filename (str): if output is True, input file name to output the file.
     """
-
-    gdf = gpd.read_file(file_path)
-    gdf.dropna(how='any', inplace=True)
+    if file:
+        gdf = gpd.read_file(file_path)
+        gdf.dropna(how='any', inplace=True)
+    else:
+        gdf = df
 
     # if full_state is True, then it will return the full state boundary
     if full_state:
