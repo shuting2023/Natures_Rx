@@ -15,7 +15,7 @@ def load_gpkg(gpkg_path):
     Input file_path of geopackage file,
     Output geopandas dataframe
     """
-    print("Loading large file, will take 1-2 minutes...")
+    print("Loading large file, may take 1-2 minutes...")
     gdf = gpd.read_file(gpkg_path)
     return gdf
 
