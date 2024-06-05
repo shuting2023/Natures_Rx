@@ -9,17 +9,6 @@ from shapely.geometry import Point
 
 # gpkg_path = 'GreenspaceDownload/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg'
 
-
-def load_gpkg(gpkg_path):
-    """
-    Input file_path of geopackage file,
-    Output geopandas dataframe
-    """
-    print("Loading large file, may take 1-2 minutes...")
-    gdf = gpd.read_file(gpkg_path)
-    return gdf
-
-
 def statefinder(row):
     """
     Helping function to find state of a given point in state_boundaries shapefile,
@@ -36,90 +25,99 @@ def statefinder(row):
         return np.nan
 
 
-def Greenspace_Data_Cleaning(rawdf):
+def loading_and_cleaning(gpkg_path):
     """
-    Cleaning process of Greenspace data,
-    input rawdf, returns cleaned df
+    Load geopackage file and apply the cleaning process of Greenspace data.
+    Returns cleaned geopandas dataframe.
     """
+    if os.path.exists('GEOJSON/cleaned_geopackage.geojson'):
+        print("Loading existing cleaned file...")
+        df = gpd.read_file('GEOJSON/cleaned_geopackage.geojson')
+    else:
+        print("Loading large file, may take 1-2 minutes...")
+        rawdf = gpd.read_file(gpkg_path)
+        print("File loaded successfully.")
 
-    print('This may take a few minutes...')
+        print('Beginning cleaning process, may take 2-3 minutes...')
 
-    cols_to_keep = [
-        "GCPNT_LAT",
-        "GCPNT_LON",
-        "CTR_MN_NM",
-        "UC_NM_MN",
-        "UC_NM_LST",
-        "E_GR_AV14",
-        "E_GR_AT14",
-        "SDG_A2G14",
-        "SDG_OS15MX",
-        "P15",
-        "B15",
-        "BUCAP15",
-        "INCM_CMI",
-        "DEV_CMI",
-        "GDP15_SM",
-        "E_BM_NM_LST",
-        "E_WR_T_14",
-        "geometry",
-    ]  # add 'geometry' to keep the geometry column
+        cols_to_keep = [
+            "GCPNT_LAT",
+            "GCPNT_LON",
+            "CTR_MN_NM",
+            "UC_NM_MN",
+            "UC_NM_LST",
+            "E_GR_AV14",
+            "E_GR_AT14",
+            "SDG_A2G14",
+            "SDG_OS15MX",
+            "P15",
+            "B15",
+            "BUCAP15",
+            "INCM_CMI",
+            "DEV_CMI",
+            "GDP15_SM",
+            "E_BM_NM_LST",
+            "E_WR_T_14",
+            "geometry",
+        ]  # add 'geometry' to keep the geometry column
 
-    df = rawdf[cols_to_keep]
-    df = df[df["CTR_MN_NM"] == "United States"]
-    df.replace(
-        to_replace=["?", "??", "???", "NAN"],
-        value=[np.nan, np.nan, np.nan, np.nan],
-        inplace=True,
-    )
-    df.rename(
-        columns={
-            "GCPNT_LAT": "Latitude",
-            "GCPNT_LON": "Longitude",
-            "CTR_MN_NM": "Country",
-            "UC_NM_MN": "Urban Center",
-            "UC_NM_LST": "Cities in Urban Center",
-        },
-        inplace=True,
-    )
+        df = rawdf[cols_to_keep]
+        df = df[df["CTR_MN_NM"] == "United States"]
+        df.replace(
+            to_replace=["?", "??", "???", "NAN"],
+            value=[np.nan, np.nan, np.nan, np.nan],
+            inplace=True,
+        )
+        df.rename(
+            columns={
+                "GCPNT_LAT": "Latitude",
+                "GCPNT_LON": "Longitude",
+                "CTR_MN_NM": "Country",
+                "UC_NM_MN": "Urban Center",
+                "UC_NM_LST": "Cities in Urban Center",
+            },
+            inplace=True,
+        )
 
-    a1 = df.loc[482]["Cities in Urban Center"]
-    a1replace = a1.replace("’", "'")
+        a1 = df.loc[482]["Cities in Urban Center"]
+        a1replace = a1.replace("’", "'")
 
-    df.at[482, "Urban Center"] = "O'Fallon"
-    df.at[482, "Cities in Urban Center"] = a1replace
+        df.at[482, "Urban Center"] = "O'Fallon"
+        df.at[482, "Cities in Urban Center"] = a1replace
 
-    df["Cities in Urban Center_copy"] = df["Cities in Urban Center"]
-    df["Cities in Urban Center"] = df["Cities in Urban Center"].str.split(";")
-    df = df.explode("Cities in Urban Center")
-    df.reset_index(inplace=True, drop=False)
-    df.rename(
-        columns={"index": "UC_Grouping"}, inplace=True
-    )  # update UC Grouping to UC_Grouping
-    df["Cities in Urban Center"] = df["Cities in Urban Center"].str.strip()
+        df["Cities in Urban Center_copy"] = df["Cities in Urban Center"]
+        df["Cities in Urban Center"] = df["Cities in Urban Center"].str.split(";")
+        df = df.explode("Cities in Urban Center")
+        df.reset_index(inplace=True, drop=False)
+        df.rename(
+            columns={"index": "UC_Grouping"}, inplace=True
+        )  # update UC Grouping to UC_Grouping
+        df["Cities in Urban Center"] = df["Cities in Urban Center"].str.strip()
 
-    mhdf = pd.read_csv(
-        "MHDS/Original/500_Cities__City-level_Data__GIS_Friendly_Format___2017_release_20240514.csv"
-    )
-    mh_cities = (mhdf["PlaceName"].unique()).tolist()
+        mhdf = pd.read_csv(
+            "MHDS/Original/500_Cities__City-level_Data__GIS_Friendly_Format___2017_release_20240514.csv"
+        )
+        mh_cities = (mhdf["PlaceName"].unique()).tolist()
 
-    ucgroup = df[df["Cities in Urban Center"].isin(mh_cities)]
-    ucgrouplist = ucgroup.index.tolist()
+        ucgroup = df[df["Cities in Urban Center"].isin(mh_cities)]
+        ucgrouplist = ucgroup.index.tolist()
 
-    df = df[df.index.isin(ucgrouplist)]
+        df = df[df.index.isin(ucgrouplist)]
 
-    df["State"] = df.apply(statefinder, axis=1)
+        df["State"] = df.apply(statefinder, axis=1)
+
+        print("Cleaning process completed.")
+        df.to_file('GEOJSON/geopackage.geojson', driver="GeoJSON")
 
     return df
 
-
-def rows_matching_with_merged(path, df, key_col="UC_Grouping"):
+def rows_matching_with_merged(df_path, df, key_col="UC_Grouping"):
     """
     Input path of merged file, df to be matched and key_col to be matched,
     Returns merged_greenspace_mh df and updated df with only matching rows
     """
 
-    mer_df = pd.read_csv(path, index_col=0)
+    mer_df = pd.read_csv(df_path, index_col=0)
 
     key_list = (mer_df[key_col].unique()).tolist()
 
@@ -140,7 +138,7 @@ def smaller_file(gdf, key_cols=["UC_Grouping", "geometry"]):
     return df.drop_duplicates()
 
 
-def df_to_geojson(df, filename="Greenspace_US.geojson"):
+def df_to_geojson(df, filename="GEOJSON/Greenspace_US.geojson"):
     """
     Input df, filename to save,
     Returns None, saves geojson file
@@ -151,10 +149,6 @@ def df_to_geojson(df, filename="Greenspace_US.geojson"):
         df.to_file(filename, driver="GeoJSON")
 
     return None
-
-
-# col_list = ['Population2010', 'MHLTH_AdjPrev', 'E_GR_AV14', 'E_GR_AT14', 'SDG_A2G14', 'SDG_OS15MX', 'P15','B15', 'BUCAP15', 'GDP15_SM', 'E_WR_T_14', 'INCM_CMI','DEV_CMI', 'E_BM_NM_LST']
-
 
 def merged_choropleth_map(
     boundary_file_path,
@@ -208,7 +202,7 @@ def merged_choropleth_map(
     # firstly, add mental health prevalence to the geojson file
     for s in cp.geojson.data["features"]:
         for col in col_list:
-            val = df[df["UC_Grouping"] == s["properties"]["UC_Grouping"]][col].values[0]
+            val = df[df[geo_col[0]] == s["properties"][key]][col].values[0]
             if val:
                 try:
                     s["properties"][col] = int(val)
@@ -238,3 +232,87 @@ def output_map_html(m, filename="map.html"):
         print(f"Saving map to {filename}")
         m.save(filename)
     return None
+
+def us_division():
+    """
+    Returns a dictionary of US divisions and their respective states.
+    """
+    us_divisions = {
+        "New England": ["CT", "ME", "MA", "NH", "RI", "VT"],
+        "Middle Atlantic": ["NJ", "NY", "PA"],
+        "East North Central": ["IL", "IN", "MI", "OH", "WI"],
+        "West North Central": ["IA", "KS", "MN", "MO", "NE", "ND", "SD"],
+        "South Atlantic": ["DE", "FL", "GA", "MD", "NC", "SC", "VA", "WV", "DC"],
+        "East South Central": ["AL", "KY", "MS", "TN"],
+        "West South Central": ["AR", "LA", "OK", "TX"],
+        "Mountain": ["AZ", "CO", "ID", "MT", "NV", "NM", "UT", "WY"],
+        "Pacific": ["AK", "CA", "HI", "OR", "WA"]
+    }
+    return us_divisions
+
+def apply_geo_labels(df, label_col_name, label_dict, base_col):
+    """
+    Apply labels based on existing column.
+    Input df, name for labeled column, label dictionary, and based column.
+    Returns the dataframe with the labeled column.
+    """
+    df[label_col_name] = ["None" for x in range(len(df))]
+    for key, value in label_dict.items():
+        df.loc[df[base_col].isin(value), label_col_name] = key
+    return df
+
+def cate_to_num_labels(df, col_name):
+    """
+    Convert categorical data to numerical labels.
+    Input dataframe and column name.
+    Return dictionary with key as the numerical label and value as the categorical data.
+    """
+    lst = [x for x in df[col_name].unique()]
+    label_dict = {}
+    for n, string in [x for x in enumerate(lst)]:
+        label_dict[n] = string
+    return label_dict
+
+def apply_num_labels(df, label_col_name, label_dict, base_col):
+    """
+    Apply labels based on existing column.
+    Input df, name for labeled column, label dictionary, and based column.
+    Returns the dataframe with the labeled column.
+    """
+    df[label_col_name] = ["None" for x in range(len(df))]
+    for key, value in label_dict.items():
+        df.loc[df[base_col]==(value), label_col_name] = key
+    return df
+
+def div_merged_dropcols(df, drop_lst):
+    """
+    Manipulate the merged dataset by dropping columns.
+    Input dataframe.
+    Returns the manipulated dataframe.
+    """
+    return df.drop(columns = drop_lst)
+
+def get_mode(Series):
+    """
+    Helping function to return the mode of a series.    
+    """
+    return Series.mode()[0]
+
+def aggreate_division(df, non_mean_cols = ['Biome_Class', 'Division'], mode_col = 'Biome_Class',groupby_col = 'Division'):  
+
+    """
+    Input dataframe, non_mean_cols, mode_col, and groupby_col.
+    Returns the aggregated dataframe.
+    """
+
+    agg_dict = {}
+    for x in df.columns:
+        if x not in non_mean_cols:
+            agg_dict[x] = 'mean'
+        elif x == 'Biome_Class':
+            agg_dict[x] = get_mode
+
+    group_df = df.groupby(groupby_col).agg(agg_dict)
+    group_df['Biome_Class'] = group_df['Biome_Class'].astype('str')
+    group_df.reset_index(inplace=True)
+    return group_df
