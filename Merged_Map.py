@@ -9,6 +9,7 @@ from shapely.geometry import Point
 
 # gpkg_path = 'GreenspaceDownload/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg'
 
+
 def statefinder(row):
     """
     Helping function to find state of a given point in state_boundaries shapefile,
@@ -30,15 +31,15 @@ def loading_and_cleaning(gpkg_path):
     Load geopackage file and apply the cleaning process of Greenspace data.
     Returns cleaned geopandas dataframe.
     """
-    if os.path.exists('GEOJSON/cleaned_geopackage.geojson'):
+    if os.path.exists("GEOJSON/cleaned_geopackage.geojson"):
         print("Loading existing cleaned file...")
-        df = gpd.read_file('GEOJSON/cleaned_geopackage.geojson')
+        df = gpd.read_file("GEOJSON/cleaned_geopackage.geojson")
     else:
         print("Loading large file, may take 1-2 minutes...")
         rawdf = gpd.read_file(gpkg_path)
         print("File loaded successfully.")
 
-        print('Beginning cleaning process, may take 2-3 minutes...')
+        print("Beginning cleaning process, may take 2-3 minutes...")
 
         cols_to_keep = [
             "GCPNT_LAT",
@@ -107,9 +108,10 @@ def loading_and_cleaning(gpkg_path):
         df["State"] = df.apply(statefinder, axis=1)
 
         print("Cleaning process completed.")
-        df.to_file('GEOJSON/geopackage.geojson', driver="GeoJSON")
+        df.to_file("GEOJSON/geopackage.geojson", driver="GeoJSON")
 
     return df
+
 
 def rows_matching_with_merged(df_path, df, key_col="UC_Grouping"):
     """
@@ -149,6 +151,24 @@ def df_to_geojson(df, filename="GEOJSON/Greenspace_US.geojson"):
         df.to_file(filename, driver="GeoJSON")
 
     return None
+
+
+def file_to_geojson(file_path, filename):
+    """
+    Input file_path, filename to save,
+    Output geojson file,
+    Returns geopandas dataframe
+    """
+
+    gdf = gpd.read_file(file_path)
+    gdf.dropna(how="any", inplace=True)
+    if os.path.exists(filename):
+        print("File already exists.")
+    else:
+        gdf.to_file(filename, driver="GeoJSON")
+
+    return gdf
+
 
 def merged_choropleth_map(
     boundary_file_path,
@@ -220,6 +240,7 @@ def merged_choropleth_map(
 
     return m
 
+
 def output_map_html(m, filename="map.html"):
     """
     Input m, filename to save,
@@ -231,6 +252,7 @@ def output_map_html(m, filename="map.html"):
         print(f"Saving map to {filename}")
         m.save(filename)
     return None
+
 
 def us_division():
     """
@@ -245,9 +267,10 @@ def us_division():
         "East South Central": ["AL", "KY", "MS", "TN"],
         "West South Central": ["AR", "LA", "OK", "TX"],
         "Mountain": ["AZ", "CO", "ID", "MT", "NV", "NM", "UT", "WY"],
-        "Pacific": ["AK", "CA", "HI", "OR", "WA"]
+        "Pacific": ["AK", "CA", "HI", "OR", "WA"],
     }
     return us_divisions
+
 
 def apply_geo_labels(df, label_col_name, label_dict, base_col):
     """
@@ -261,6 +284,7 @@ def apply_geo_labels(df, label_col_name, label_dict, base_col):
         new_df.loc[new_df[base_col].isin(value), label_col_name] = key
     return new_df
 
+
 def cate_to_num_labels(df, col_name):
     """
     Convert categorical data to numerical labels.
@@ -273,6 +297,7 @@ def cate_to_num_labels(df, col_name):
         label_dict[n] = string
     return label_dict
 
+
 def apply_num_labels(df, label_col_name, label_dict, base_col):
     """
     Apply labels based on existing column.
@@ -281,8 +306,9 @@ def apply_num_labels(df, label_col_name, label_dict, base_col):
     """
     df[label_col_name] = ["None" for x in range(len(df))]
     for key, value in label_dict.items():
-        df.loc[df[base_col]==(value), label_col_name] = key
+        df.loc[df[base_col] == (value), label_col_name] = key
     return df
+
 
 def div_merged_dropcols(df, drop_lst):
     """
@@ -290,10 +316,15 @@ def div_merged_dropcols(df, drop_lst):
     Input dataframe.
     Returns the manipulated dataframe.
     """
-    return df.drop(columns = drop_lst)
+    return df.drop(columns=drop_lst)
 
-def aggregate_division(df, non_mean_cols = ['Biome_Class', 'Division'], mode_col = 'Biome_Class',groupby_col = 'Division'):  
 
+def aggregate_division(
+    df,
+    non_mean_cols=["Biome_Class", "Division"],
+    mode_col="Biome_Class",
+    groupby_col="Division",
+):
     """
     Input dataframe, non_mean_cols, mode_col, and groupby_col.
     Returns the aggregated dataframe.
@@ -301,14 +332,15 @@ def aggregate_division(df, non_mean_cols = ['Biome_Class', 'Division'], mode_col
     agg_dict = {}
     for x in df.columns:
         if x not in non_mean_cols:
-            agg_dict[x] = 'mean'
-        elif x == 'Biome_Class':
+            agg_dict[x] = "mean"
+        elif x == "Biome_Class":
             agg_dict[x] = lambda x: pd.Series.mode(x)[0]
 
     group_df = df.groupby(groupby_col).agg(agg_dict)
-    group_df['Biome_Class'] = group_df['Biome_Class'].astype('str')
+    group_df["Biome_Class"] = group_df["Biome_Class"].astype("str")
     group_df.reset_index(inplace=True)
     return group_df
+
 
 def us_region():
     """
@@ -316,22 +348,83 @@ def us_region():
     """
 
     us_regions = {
-        "West": ["AK", "AZ", "CA", "CO", "HI", "ID", "MT", "NV", "NM", "OR", "UT", "WA", "WY"],
-        "Midwest": ["IL", "IN", "IA", "KS", "MI", "MN", "MO", "NE", "ND", "OH", "SD", "WI"],
+        "West": [
+            "AK",
+            "AZ",
+            "CA",
+            "CO",
+            "HI",
+            "ID",
+            "MT",
+            "NV",
+            "NM",
+            "OR",
+            "UT",
+            "WA",
+            "WY",
+        ],
+        "Midwest": [
+            "IL",
+            "IN",
+            "IA",
+            "KS",
+            "MI",
+            "MN",
+            "MO",
+            "NE",
+            "ND",
+            "OH",
+            "SD",
+            "WI",
+        ],
         "Northeast": ["CT", "DE", "ME", "MD", "MA", "NH", "NJ", "NY", "PA", "RI", "VT"],
-        "South": ["AL", "AR", "FL", "GA", "KY", "LA", "MS", "NC", "OK", "SC", "TN", "TX", "VA", "WV", "DC"]
+        "South": [
+            "AL",
+            "AR",
+            "FL",
+            "GA",
+            "KY",
+            "LA",
+            "MS",
+            "NC",
+            "OK",
+            "SC",
+            "TN",
+            "TX",
+            "VA",
+            "WV",
+            "DC",
+        ],
     }
     return us_regions
 
-def aggregation_manipulation(label_dict, raw_df, drop_lst = ['E_BM_NM_LST','State', 'Cities in Urban Center_copy','INCM_CMI', 'DEV_CMI','Latitude', 'Longitude','UC_Grouping','Population2010'], non_mean_cols = ['Biome_Class', 'Region'], mode_col = 'Biome_Class',groupby_col = 'Region'):
+
+def aggregation_manipulation(
+    label_dict,
+    raw_df,
+    drop_lst=[
+        "E_BM_NM_LST",
+        "State",
+        "Cities in Urban Center_copy",
+        "INCM_CMI",
+        "DEV_CMI",
+        "Latitude",
+        "Longitude",
+        "UC_Grouping",
+        "Population2010",
+    ],
+    non_mean_cols=["Biome_Class", "Region"],
+    mode_col="Biome_Class",
+    groupby_col="Region",
+):
     """
     Input label_dict, raw_df, drop_lst, non_mean_cols, mode_col, and groupby_col.
-    Returns the final aggregated dataframe.    
+    Returns the final aggregated dataframe.
     """
-    df_v1 = apply_geo_labels(raw_df, 'Region', label_dict, 'State')
+    df_v1 = apply_geo_labels(raw_df, "Region", label_dict, "State")
 
-    env_dict = cate_to_num_labels(df_v1, 'E_BM_NM_LST')
-    df_v2 = apply_num_labels(df_v1, 'Biome_Class', env_dict, 'E_BM_NM_LST')
+    env_dict = cate_to_num_labels(df_v1, "E_BM_NM_LST")
+    df_v2 = apply_num_labels(df_v1, "Biome_Class", env_dict, "E_BM_NM_LST")
 
     drop_lst = drop_lst
     df_v3 = div_merged_dropcols(df_v2, drop_lst)
