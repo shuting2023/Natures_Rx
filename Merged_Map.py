@@ -220,7 +220,6 @@ def merged_choropleth_map(
 
     return m
 
-
 def output_map_html(m, filename="map.html"):
     """
     Input m, filename to save,
@@ -256,10 +255,11 @@ def apply_geo_labels(df, label_col_name, label_dict, base_col):
     Input df, name for labeled column, label dictionary, and based column.
     Returns the dataframe with the labeled column.
     """
-    df[label_col_name] = ["None" for x in range(len(df))]
+    new_df = df.copy()
+    new_df[label_col_name] = ["None" for x in range(len(df))]
     for key, value in label_dict.items():
-        df.loc[df[base_col].isin(value), label_col_name] = key
-    return df
+        new_df.loc[new_df[base_col].isin(value), label_col_name] = key
+    return new_df
 
 def cate_to_num_labels(df, col_name):
     """
@@ -292,27 +292,49 @@ def div_merged_dropcols(df, drop_lst):
     """
     return df.drop(columns = drop_lst)
 
-def get_mode(Series):
-    """
-    Helping function to return the mode of a series.    
-    """
-    return Series.mode()[0]
-
-def aggreate_division(df, non_mean_cols = ['Biome_Class', 'Division'], mode_col = 'Biome_Class',groupby_col = 'Division'):  
+def aggregate_division(df, non_mean_cols = ['Biome_Class', 'Division'], mode_col = 'Biome_Class',groupby_col = 'Division'):  
 
     """
     Input dataframe, non_mean_cols, mode_col, and groupby_col.
     Returns the aggregated dataframe.
     """
-
     agg_dict = {}
     for x in df.columns:
         if x not in non_mean_cols:
             agg_dict[x] = 'mean'
         elif x == 'Biome_Class':
-            agg_dict[x] = get_mode
+            agg_dict[x] = lambda x: pd.Series.mode(x)[0]
 
     group_df = df.groupby(groupby_col).agg(agg_dict)
     group_df['Biome_Class'] = group_df['Biome_Class'].astype('str')
     group_df.reset_index(inplace=True)
     return group_df
+
+def us_region():
+    """
+    Returns a dictionary of US regions and their respective states.
+    """
+
+    us_regions = {
+        "West": ["AK", "AZ", "CA", "CO", "HI", "ID", "MT", "NV", "NM", "OR", "UT", "WA", "WY"],
+        "Midwest": ["IL", "IN", "IA", "KS", "MI", "MN", "MO", "NE", "ND", "OH", "SD", "WI"],
+        "Northeast": ["CT", "DE", "ME", "MD", "MA", "NH", "NJ", "NY", "PA", "RI", "VT"],
+        "South": ["AL", "AR", "FL", "GA", "KY", "LA", "MS", "NC", "OK", "SC", "TN", "TX", "VA", "WV", "DC"]
+    }
+    return us_regions
+
+def aggregation_manipulation(label_dict, raw_df, drop_lst = ['E_BM_NM_LST','State', 'Cities in Urban Center_copy','INCM_CMI', 'DEV_CMI','Latitude', 'Longitude','UC_Grouping','Population2010'], non_mean_cols = ['Biome_Class', 'Region'], mode_col = 'Biome_Class',groupby_col = 'Region'):
+    """
+    Input label_dict, raw_df, drop_lst, non_mean_cols, mode_col, and groupby_col.
+    Returns the final aggregated dataframe.    
+    """
+    df_v1 = apply_geo_labels(raw_df, 'Region', label_dict, 'State')
+
+    env_dict = cate_to_num_labels(df_v1, 'E_BM_NM_LST')
+    df_v2 = apply_num_labels(df_v1, 'Biome_Class', env_dict, 'E_BM_NM_LST')
+
+    drop_lst = drop_lst
+    df_v3 = div_merged_dropcols(df_v2, drop_lst)
+
+    final_df = aggregate_division(df_v3, non_mean_cols, mode_col, groupby_col)
+    return final_df
