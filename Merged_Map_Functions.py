@@ -310,30 +310,30 @@ def apply_num_labels(df, label_col_name, label_dict, base_col):
     return df
 
 
-def div_merged_dropcols(df, drop_lst):
-    """
-    Manipulate the merged dataset by dropping columns.
-    Input dataframe.
-    Returns the manipulated dataframe.
-    """
-    return df.drop(columns=drop_lst)
-
-
-def aggregate_division(
-    df,
+def aggregate_multi_cols(
+    input_df,
+    str_col,
     non_mean_cols=["Biome_Class", "Division"],
-    mode_col="Biome_Class",
+    mode_col=["Biome_Class"],
+    sum_col=["P15", "B15", "GDP15_SM"],
     groupby_col="Division",
 ):
     """
-    Input dataframe, non_mean_cols, mode_col, and groupby_col.
+    Drop columns that are in str_col.
+    For columns that are not in non_mean_cols, mode_col, and sum_col, apply mean aggregation.
+    For mode_col, apply mode aggregation.
     Returns the aggregated dataframe.
     """
+    df = input_df.copy()
+    df.drop(columns=str_col, inplace=True)
+
     agg_dict = {}
     for x in df.columns:
         if x not in non_mean_cols:
             agg_dict[x] = "mean"
-        elif x == "Biome_Class":
+        elif x in sum_col:
+            agg_dict[x] = "sum"
+        elif x in mode_col:
             agg_dict[x] = lambda x: pd.Series.mode(x)[0]
 
     group_df = df.groupby(groupby_col).agg(agg_dict)
@@ -397,37 +397,3 @@ def us_region():
         ],
     }
     return us_regions
-
-
-def aggregation_manipulation(
-    label_dict,
-    raw_df,
-    drop_lst=[
-        "E_BM_NM_LST",
-        "State",
-        "Cities in Urban Center_copy",
-        "INCM_CMI",
-        "DEV_CMI",
-        "Latitude",
-        "Longitude",
-        "UC_Grouping",
-        "Population2010",
-    ],
-    non_mean_cols=["Biome_Class", "Region"],
-    mode_col="Biome_Class",
-    groupby_col="Region",
-):
-    """
-    Input label_dict, raw_df, drop_lst, non_mean_cols, mode_col, and groupby_col.
-    Returns the final aggregated dataframe.
-    """
-    df_v1 = apply_geo_labels(raw_df, "Region", label_dict, "State")
-
-    env_dict = cate_to_num_labels(df_v1, "E_BM_NM_LST")
-    df_v2 = apply_num_labels(df_v1, "Biome_Class", env_dict, "E_BM_NM_LST")
-
-    drop_lst = drop_lst
-    df_v3 = div_merged_dropcols(df_v2, drop_lst)
-
-    final_df = aggregate_division(df_v3, non_mean_cols, mode_col, groupby_col)
-    return final_df
