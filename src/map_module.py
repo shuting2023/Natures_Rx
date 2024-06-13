@@ -320,7 +320,7 @@ def one_function_monoMap_six_urban_centers(
     other_features=["Urban Center", "State"],
     mh_feature="MH_Score",
     percentile=np.linspace(0.2, 1, 5),
-    colorlst=["#0000FF", "#FF0000"],
+    colorlst=["#FF0000", "#0000FF"],
     mh_col="MH_Score",
     mh_color_02="mh_color",
     urban_center_lst=[
@@ -486,7 +486,7 @@ def mono_color_legend(
 
     ax.set_xticks(adjusted_ticks)
 
-    ax.set_xticklabels([round(x, 2) for x in percentile][::-1] + [0], fontsize=tick_fontsize)
+    ax.set_xticklabels([0] +[round(x, 2) for x in percentile], fontsize=tick_fontsize)
 
     ax.set_yticks([])
     ax.set_title(title, fontsize=label_fontsize, y=-0.7)
