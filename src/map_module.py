@@ -95,7 +95,7 @@ def one_function_bimap_state_level(
     set_off_axis(ax)
     # title
     ax.set_title(
-        label=f"Mental Illness Score and {env_feature} Index by State",
+        label=f"Normalized Mental Illness Score and {env_feature} Score by State",
         fontsize=title_fontsize,
     )
 
@@ -374,7 +374,7 @@ def one_function_monoMap_six_urban_centers(
             )
             set_off_axis(ax[i, j])
             ax[i, j].set_title(
-                f"Mental Illness Score of Urban Center: {urban_center_lst[n + j]}, {geo_df[geo_df['Urban Center'] == urban_center_lst[n + j]]['State'].values[0]}",
+                f"Normalized Mental Illness Score of Urban Center: {urban_center_lst[n + j]}, {geo_df[geo_df['Urban Center'] == urban_center_lst[n + j]]['State'].values[0]}",
                 fontsize=plot_title_fontsize,
             )
 
@@ -486,7 +486,7 @@ def mono_color_legend(
 
     ax.set_xticks(adjusted_ticks)
 
-    ax.set_xticklabels([0] + [round(x, 2) for x in percentile], fontsize=tick_fontsize)
+    ax.set_xticklabels([round(x, 2) for x in percentile][::-1] + [0], fontsize=tick_fontsize)
 
     ax.set_yticks([])
     ax.set_title(title, fontsize=label_fontsize, y=-0.7)
