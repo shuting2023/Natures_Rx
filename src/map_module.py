@@ -11,26 +11,33 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-#### Below functions are for data manipulation for bivariate choropleth map (also can be used for monovariate choropleth map, however useless columns may be generated)
-# df_manipulation_for_bimap is designed for merged dataset and geodataframe
-# if use df_manipulation_for_bimap, the following functions can be skipped
-# df_manipulation_for_bimap returns the key geodataframe and colorlist for bivariate choropleth map
+### Below one_function_bimap_state_level is a consolidated function that combines all functions to plot a state_level bivariate choropleth map
+### Note there is no subplot option for this function, as it is designed to plot a single map
 
-### example usage of df_manipulation_for_bimap
-# color_df, colorlist = map.df_manipulation_for_bimap(geo_path, merged_path, env_feature, merge_on='UC_Grouping',...)
+## example usage of one_function_bimap_state_level
+# map.one_function_bimap_state_level(state_data, merged_data, env_feature = 'Avg Greenness')
 
 
-def df_manipulation_for_bimap(
+def one_function_bimap_state_level(
     geo_path,
     merged_path,
-    env_feature,
-    other_features,
-    lefton="UC_Grouping",
-    righton="UC_Grouping",
+    env_feature="Avg Greenness",
+    other_features=["State"],
+    lefton="State",
+    righton="STUSPS",
     mh_feature="MH_Score",
+    env_color_01="c1_env",
+    mh_col="MH_Score",
+    mh_color_02="c2_mh",
     percentile=np.linspace(0.33, 1, 3),
-    color_list=["#ffb000", "#dc267f", "#648fff", "#785ef0"]
-    ):
+    color_list=["#ffb000", "#dc267f", "#648fff", "#785ef0"],
+    legend_position=[0, 0.1, 0.1, 0.1],
+    tick_fontsize=5,
+    label_fontsize=5,
+    x_label="Mental Illness Score Index",
+    y_label="Average Greenness Index",
+    title_fontsize=10,
+):
     """
     Consolidate functions return the normalized geodataframe with key features and colorlist for bivariate choropleth map.
 
@@ -40,16 +47,66 @@ def df_manipulation_for_bimap(
         - normalize_features
         - mikhailsirenko_colorscale
         - assign_color_cells
+        - mat_subplots
+        - matplotlib_map
+        - set_off_axis
+        - bicolor_legend
     """
     geo_df = merge_geo_df(geo_path, merged_path, lefton, righton)
     focused_df = df_focused_env_feature(geo_df, env_feature, other_features)
     normalized_df = normalize_features(focused_df, env_feature, mh_feature=mh_feature)
 
     colorlist = mikhailsirenko_colorscale(percentile, color_list)
-    return normalized_df, colorlist
+    state_df = normalized_df.groupby(["State", "geometry"]).mean().reset_index()
+    state_df = gpd.GeoDataFrame(state_df, geometry="geometry")
+    state_color_df = assign_color_cells(
+        state_df,
+        env_feature,
+        env_color_01=env_color_01,
+        mh_col=mh_col,
+        mh_color_02=mh_color_02,
+        percentile=percentile,
+    )
+
+    # functions that build the bivariate choropleth map
+    _, ax = mat_subplots(1, 1, fig_size=(14, 20))
+    matplotlib_map(
+        ax,
+        state_color_df,
+        "c1_env",
+        "c2_mh",
+        colorlist,
+        xlim=[-125, -66.7],
+        ylim=[25, 50],
+        figsize=(20, 20),
+    )
+    # adding color legend
+    bicolor_legend(
+        ax,
+        colorlist,
+        percentile=percentile,
+        legend_position=legend_position,
+        tick_fontsize=tick_fontsize,
+        label_fontsize=label_fontsize,
+        x_label=x_label,
+        y_label=y_label,
+    )
+    # remove axis
+    set_off_axis(ax)
+    # title
+    ax.set_title(
+        label=f"Normalized Mental Illness Score and {env_feature} Score by State",
+        fontsize=title_fontsize,
+    )
+
+    return None
 
 
 def merge_geo_df(geo_path, merged_path_or_df, lefton, righton):
+    """
+    Input file path for the geojson file and the merged data file,
+    Return the merged geodataframe with the key features
+    """
     geo_us = gpd.read_file(geo_path)
     merged_df = pd.read_csv(merged_path_or_df, index_col=0)
     merge_geo_df = merged_df.merge(geo_us, left_on=lefton, right_on=righton, how="left")
@@ -58,6 +115,11 @@ def merge_geo_df(geo_path, merged_path_or_df, lefton, righton):
 
 
 def df_focused_env_feature(gdf, env_feature, other_features):
+    """
+    Input the merged geodataframe and the key features,
+    Return the focused geodataframe with the key features
+    """
+
     focused_df = gdf[["geometry", "MH_Score", env_feature] + other_features]
     return focused_df
 
@@ -134,9 +196,9 @@ def mikhailsirenko_colorscale(
 def assign_color_cells(
     df,
     env_col,
-    env_color_01 = 'c1_env',
-    mh_col = 'MH_Score',
-    mh_color_02 = 'c2_mh',
+    env_color_01="c1_env",
+    mh_col="MH_Score",
+    mh_color_02="c2_mh",
     percentile=np.linspace(0.33, 1, 3),
 ):
     """
@@ -157,19 +219,11 @@ def assign_color_cells(
     return indf
 
 
-
-
-#### Below functions are for plotting bivariate choropleth map using matplotlib
-
-### example usage of bi-map
-# fig, ax = map.mat_subplots(1,1,fig_size = (14,20)) # 1,1 means 1 plot
-# map.matplotlib_map(ax,color_df, 'c1_env', 'c2_mh', colorlist, xlim= [-125,-70], ylim = [25,50], figsize = (20,20))
-## adding color legend
-# map.bicolor_legend(ax, colorlist,percentile = np.linspace(0.33, 1, 3), legend_position = [0,0.1,0.1,0.1], tick_fontsize = 5, label_fontsize = 5, x_label = 'Mental Illness Score', y_label = 'Annual Average Precipitation')
-# map.set_off_axis(ax) # to remove axis
-
-
 def mat_subplots(n_row, n_col, fig_size=(20, 10)):
+    """
+    Create subplots using matplotlib
+    """
+
     fig, ax = plt.subplots(n_row, n_col, figsize=fig_size)
     return fig, ax
 
@@ -206,6 +260,10 @@ def matplotlib_map(
 
 
 def set_off_axis(ax):
+    """
+    Set off axis for the map
+    """
+
     ax.set_axis_off()
     return None
 
@@ -246,7 +304,92 @@ def bicolor_legend(
     return None
 
 
-#### Below functions are for plotting monovariate choropleth map using matplotlib
+### Below functions is consolidate function to plot a 2X3 subplots monovariate choropleth map
+
+## example usage of one_function_monoMap_six_urban_centers
+# urban_center_lst = ['Cary', 'Winston-Salem', 'Flint', 'New Bedford', 'Manchester', 'Des Moines']
+# map.one_function_monoMap_six_urban_centers(geo_data,merged_data, urban_center_lst = urban_center_lst)
+
+
+def one_function_monoMap_six_urban_centers(
+    geo_path,
+    merge_path,
+    lefton="UC_Grouping",
+    righton="UC_Grouping",
+    env_feature="Longitude",
+    other_features=["Urban Center", "State"],
+    mh_feature="MH_Score",
+    percentile=np.linspace(0.2, 1, 5),
+    colorlst=["#FF0000", "#0000FF"],
+    mh_col="MH_Score",
+    mh_color_02="mh_color",
+    urban_center_lst=[
+        "Cary",
+        "New Bedford",
+        "Flint",
+        "Winston-Salem",
+        "Manchester",
+        "Des Moines",
+    ],
+    fig_row=2,
+    fig_col=3,
+    fig_size=(18, 10),
+    alpha=0.7,
+    filter_col="Urban Center",
+    edgecolor="black",
+    linewidth=0.5,
+    plot_title_fontsize=10,
+    legend_position=[-1.1, -1, 0.8, 0.8],
+    tick_fontsize=6,
+    label_fontsize=8,
+    legend_title="Mental Illness Score Index",
+):
+    """
+    Consolidate all functions to plot a 2X3 subplots monovariate choropleth map
+    """
+    print("It may take 30s to 1min to generate the map, but it is worth waiting :D")
+
+    geo_df = merge_geo_df(geo_path, merge_path, lefton, righton)
+    focused_df = df_focused_env_feature(geo_df, env_feature, other_features)
+    normalized_df = normalize_features(focused_df, env_feature, mh_feature)
+    color_list = mono_mikhailsirenko_colorscale(percentile, colorlst)
+    color_df = mono_assign_color_cells(normalized_df, mh_col, mh_color_02, percentile)
+
+    _, ax = plt.subplots(fig_row, fig_col, figsize=fig_size)
+    for i in range(fig_row):
+        n = i
+        if i > 0:
+            n = 3
+        for j in range(fig_col):
+            map_urban_center(
+                color_df,
+                ax[i, j],
+                urban_center_lst[n + j],
+                color_list,
+                alpha=0.7,
+                mh_color_02="mh_color",
+                filter_col="Urban Center",
+                edgecolor="black",
+                linewidth=0.5,
+            )
+            set_off_axis(ax[i, j])
+            ax[i, j].set_title(
+                f"Normalized Mental Illness Score of Urban Center: {urban_center_lst[n + j]}, {geo_df[geo_df['Urban Center'] == urban_center_lst[n + j]]['State'].values[0]}",
+                fontsize=plot_title_fontsize,
+            )
+
+    mono_color_legend(
+        ax[1, 2],
+        color_list,
+        percentile=percentile,
+        legend_position=legend_position,
+        tick_fontsize=tick_fontsize,
+        label_fontsize=label_fontsize,
+        title=legend_title,
+    )
+
+    return None
+
 
 def mono_mikhailsirenko_colorscale(
     percentile=np.linspace(0.2, 1, 5), color_list=["#808080", "#FF0000"]
@@ -297,69 +440,6 @@ def mono_assign_color_cells(
     indf[mh_color_02] = indf[mh_col].apply(lambda x: assign_color_num(x))
     return indf
 
-### Below functions is consolidate function to plot a 2X3 subplots monovariate choropleth map
-
-## example usage of one_function_monoMap
-# urban_center_lst = ['Cary', 'Winston-Salem', 'Flint', 'New Bedford', 'Manchester', 'Des Moines']
-# map.one_function_monoMap(color_df, urban_center_lst, c_lst)
-
-def one_function_monoMap(
-    gdf,
-    urban_center_lst,
-    color_lst,
-    fig_row=2,
-    fig_col=3,
-    fig_size=(18, 10),
-    alpha=0.7,
-    mh_color_02="mh_color",
-    filter_col="Urban Center",
-    edgecolor="black",
-    linewidth=0.5,
-    plot_title_fontsize=10,
-    percentile=np.linspace(0.2, 1, 5),
-    legend_position=[-1.1, -1, 0.8, 0.8],
-    tick_fontsize=6,
-    label_fontsize=8,
-    legend_title="Mental Illness Score Index",
-):
-    """
-    Consolidate all functions to plot a 2X3 subplots monovariate choropleth map
-    """
-
-    _, ax = plt.subplots(fig_row, fig_col, figsize=fig_size)
-    for i in range(fig_row):
-        n = i
-        if i > 0:
-            n = 3
-        for j in range(fig_col):
-            map_urban_center(
-                gdf,
-                ax[i, j],
-                urban_center_lst[n + j],
-                color_lst,
-                alpha=0.7,
-                mh_color_02="mh_color",
-                filter_col="Urban Center",
-                edgecolor="black",
-                linewidth=0.5,
-            )
-            set_off_axis(ax[i, j])
-            ax[i, j].set_title(f"Mental Illness Score of Urban Center: {urban_center_lst[n + j]}, {gdf[gdf['Urban Center'] == urban_center_lst[n + j]]['State'].values[0]}",
-                fontsize=plot_title_fontsize,
-            )
-
-    mono_color_legend(
-        ax[1, 2],
-        color_lst,
-        percentile=percentile,
-        legend_position=legend_position,
-        tick_fontsize=tick_fontsize,
-        label_fontsize=label_fontsize,
-        title=legend_title,
-    )
-
-    return None
-
 
 def map_urban_center(
     gdf,
@@ -406,7 +486,7 @@ def mono_color_legend(
 
     ax.set_xticks(adjusted_ticks)
 
-    ax.set_xticklabels([0] + [round(x, 2) for x in percentile], fontsize=tick_fontsize)
+    ax.set_xticklabels([0] +[round(x, 2) for x in percentile], fontsize=tick_fontsize)
 
     ax.set_yticks([])
     ax.set_title(title, fontsize=label_fontsize, y=-0.7)
