@@ -29,13 +29,10 @@ def df_manipulation_for_bimap(
     righton="UC_Grouping",
     mh_feature="MH_Score",
     percentile=np.linspace(0.33, 1, 3),
-    color_list=["#ffb000", "#dc267f", "#648fff", "#785ef0"],
-    env_color_01="c1_env",
-    mh_col="MH_Score",
-    mh_color_02="c2_mh",
-):
+    color_list=["#ffb000", "#dc267f", "#648fff", "#785ef0"]
+    ):
     """
-    Consolidate functions return the key geodataframe and colorlist for bivariate choropleth map.
+    Consolidate functions return the normalized geodataframe with key features and colorlist for bivariate choropleth map.
 
     Consolidated functions:
         - merge_geo_df
@@ -49,16 +46,12 @@ def df_manipulation_for_bimap(
     normalized_df = normalize_features(focused_df, env_feature, mh_feature=mh_feature)
 
     colorlist = mikhailsirenko_colorscale(percentile, color_list)
-    color_df = assign_color_cells(
-        normalized_df, env_feature, env_color_01, mh_col, mh_color_02, percentile
-    )
-
-    return color_df, colorlist
+    return normalized_df, colorlist
 
 
-def merge_geo_df(geo_path, merged_path, lefton, righton):
+def merge_geo_df(geo_path, merged_path_or_df, lefton, righton):
     geo_us = gpd.read_file(geo_path)
-    merged_df = pd.read_csv(merged_path, index_col=0)
+    merged_df = pd.read_csv(merged_path_or_df, index_col=0)
     merge_geo_df = merged_df.merge(geo_us, left_on=lefton, right_on=righton, how="left")
     geo_df = gpd.GeoDataFrame(merge_geo_df, geometry="geometry")
     return geo_df
@@ -141,10 +134,10 @@ def mikhailsirenko_colorscale(
 def assign_color_cells(
     df,
     env_col,
-    env_color_01,
-    mh_col,
-    mh_color_02,
-    percentile=np.linspace(0.33, 1, 3).tolist(),
+    env_color_01 = 'c1_env',
+    mh_col = 'MH_Score',
+    mh_color_02 = 'c2_mh',
+    percentile=np.linspace(0.33, 1, 3),
 ):
     """
     Assigning color index to the cells based on the percentile of the features
@@ -162,6 +155,8 @@ def assign_color_cells(
     indf[env_color_01] = indf[env_col].apply(lambda x: assign_color_num(x))
     indf[mh_color_02] = indf[mh_col].apply(lambda x: assign_color_num(x))
     return indf
+
+
 
 
 #### Below functions are for plotting bivariate choropleth map using matplotlib
@@ -349,8 +344,7 @@ def one_function_monoMap(
                 linewidth=0.5,
             )
             set_off_axis(ax[i, j])
-            ax[i, j].set_title(
-                "Mental Illness Score of Urban Center: " + urban_center_lst[n + j],
+            ax[i, j].set_title(f"Mental Illness Score of Urban Center: {urban_center_lst[n + j]}, {gdf[gdf['Urban Center'] == urban_center_lst[n + j]]['State'].values[0]}",
                 fontsize=plot_title_fontsize,
             )
 
