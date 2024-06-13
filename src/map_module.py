@@ -10,7 +10,7 @@ import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
 
-#### Below functions are for data manipulation for bivariate choropleth map
+#### Below functions are for data manipulation for bivariate choropleth map (also can be used for monovariate choropleth map, however useless columns may be generated)
 # df_manipulation_for_bimap is designed for merged dataset and geodataframe
 # if use df_manipulation_for_bimap, the following functions can be skipped
 # df_manipulation_for_bimap returns the key geodataframe and colorlist for bivariate choropleth map
@@ -228,4 +228,89 @@ def bicolor_legend(
     ax.yaxis.set_label_position("right")
     ax.set_xlabel(x_label, fontsize=label_fontsize)
     _ = ax.set_ylabel(y_label, fontsize=label_fontsize)
+    return None
+
+#### Below functions are for plotting monovariate choropleth map using matplotlib
+
+def mono_mikhailsirenko_colorscale(
+    percentile = np.linspace(0.2, 1, 5),
+    color_list=['#808080', '#FF0000']
+):
+    """
+    Creating color gradient list for mono-variable choropleth map legend
+
+    Code from Mikhail Sirenko, slightly modified to fit our project
+    More information: https://github.com/mikhailsirenko/bivariate-choropleth/blob/main/bivariate-choropleth.ipynb
+
+    """
+
+    # basic colors for the gradient
+    c00 = hex_to_Color(color_list[0])
+    c10 = hex_to_Color(color_list[1])
+
+    # generate colorlist
+    num_grps = len(percentile)
+    colorlist = []
+    for i in range(num_grps):  # creating top and bottom horizontal color gradient
+        # Using lerp to compute intermediate color between two colors at position t
+        colorlist.append(c00.lerp(c10, 1 / (num_grps-1) * i))
+
+    # convert colorlist(rgba) back to RGB values
+    colorlist = [[c.r, c.g, c.b] for c in colorlist]
+
+    color_list = np.array(colorlist).reshape(1, -1, 3)
+    return color_list
+
+def mono_assign_color_cells(
+    df,
+    mh_col = 'MH_Score',
+    mh_color_02 = 'mh_color',
+    percentile=np.linspace(0.2, 1, 5),
+):
+    """
+    Assigning color index to the cells based on the percentile of the features
+    """
+
+    def assign_color_num(x):
+        """
+        Helping function to assign color index to the cells
+        """
+        for n in range(len(percentile)):
+            if x <= percentile[n]:
+                return len(percentile)-1 - n
+
+    indf = df.copy()
+    # indf[env_color_01] = indf[env_col].apply(lambda x: assign_color_num(x))
+    indf[mh_color_02] = indf[mh_col].apply(lambda x: assign_color_num(x))
+    return indf
+
+def map_urban_center(gdf, ax, urban_center, colorlist, mh_color_02 = 'mh_color',filter_col = 'Urban Center',edgecolor='black', linewidth=0.5, alpha=1):
+    fil_df = gdf[gdf[filter_col] == urban_center]
+    fil_df.plot(ax=ax, color= colorlist[0][fil_df['mh_color']][0].tolist(), alpha = alpha, edgecolor=edgecolor, linewidth=linewidth)
+    cx.add_basemap(ax, crs=gdf.crs, source=cx.providers.OpenStreetMap.Mapnik)
+    return None
+
+def mono_color_legend(ax,color_list,percentile = np.linspace(0.2, 1, 5),
+    legend_position=[0.6, 0.7, 0.2, 0.2],
+    tick_fontsize=6,
+    label_fontsize=8,
+    title = 'Mental Illness Score',    
+):
+    """
+    Insert mono-variate choropleth map legend
+    """
+    ax = ax.inset_axes(legend_position)
+    ax.set_aspect("equal", adjustable="box")
+
+    ax.imshow(color_list)
+
+    default_ticks = np.arange(0, len(percentile)+1, 1)
+    adjusted_ticks = default_ticks - 0.5
+
+    ax.set_xticks(adjusted_ticks)
+
+    ax.set_xticklabels([0] + [round(x,2) for x in percentile], fontsize=tick_fontsize)
+
+    ax.set_yticks([])
+    ax.set_title(title, fontsize=label_fontsize, y = -0.7)
     return None
