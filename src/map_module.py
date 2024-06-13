@@ -434,7 +434,7 @@ def mono_assign_color_cells(
         """
         for n in range(len(percentile)):
             if x <= percentile[n]:
-                return len(percentile) - 1 - n
+                return n
 
     indf = df.copy()
     indf[mh_color_02] = indf[mh_col].apply(lambda x: assign_color_num(x))
