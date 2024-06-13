@@ -17,21 +17,27 @@ warnings.filterwarnings("ignore")
 ## example usage of one_function_bimap_state_level
 # map.one_function_bimap_state_level(state_data, merged_data, env_feature = 'Avg Greenness')
 
+
 def one_function_bimap_state_level(
     geo_path,
     merged_path,
-    env_feature = 'Avg Greenness',
-    other_features = ['State'],
+    env_feature="Avg Greenness",
+    other_features=["State"],
     lefton="State",
     righton="STUSPS",
     mh_feature="MH_Score",
-    env_color_01 = 'c1_env',
-    mh_col = 'MH_Score',
-    mh_color_02 = 'c2_mh',
+    env_color_01="c1_env",
+    mh_col="MH_Score",
+    mh_color_02="c2_mh",
     percentile=np.linspace(0.33, 1, 3),
     color_list=["#ffb000", "#dc267f", "#648fff", "#785ef0"],
-    legend_position = [0,0.1,0.1,0.1], tick_fontsize = 5, label_fontsize = 5, x_label = 'Mental Illness Score Index', y_label = 'Average Greenness Index',title_fontsize = 10
-    ):
+    legend_position=[0, 0.1, 0.1, 0.1],
+    tick_fontsize=5,
+    label_fontsize=5,
+    x_label="Mental Illness Score Index",
+    y_label="Average Greenness Index",
+    title_fontsize=10,
+):
     """
     Consolidate functions return the normalized geodataframe with key features and colorlist for bivariate choropleth map.
 
@@ -51,22 +57,47 @@ def one_function_bimap_state_level(
     normalized_df = normalize_features(focused_df, env_feature, mh_feature=mh_feature)
 
     colorlist = mikhailsirenko_colorscale(percentile, color_list)
-    state_df = normalized_df.groupby(["State",'geometry']).mean().reset_index()
-    state_df = gpd.GeoDataFrame(state_df, geometry='geometry')
-    state_color_df = assign_color_cells(state_df,env_feature, env_color_01 = env_color_01,
-    mh_col = mh_col,
-    mh_color_02 = mh_color_02,
-    percentile=percentile)
+    state_df = normalized_df.groupby(["State", "geometry"]).mean().reset_index()
+    state_df = gpd.GeoDataFrame(state_df, geometry="geometry")
+    state_color_df = assign_color_cells(
+        state_df,
+        env_feature,
+        env_color_01=env_color_01,
+        mh_col=mh_col,
+        mh_color_02=mh_color_02,
+        percentile=percentile,
+    )
 
     # functions that build the bivariate choropleth map
-    _, ax = mat_subplots(1,1,fig_size = (14,20)) 
-    matplotlib_map(ax,state_color_df, 'c1_env', 'c2_mh', colorlist, xlim= [-125,-66.7], ylim = [25,50], figsize = (20,20))
+    _, ax = mat_subplots(1, 1, fig_size=(14, 20))
+    matplotlib_map(
+        ax,
+        state_color_df,
+        "c1_env",
+        "c2_mh",
+        colorlist,
+        xlim=[-125, -66.7],
+        ylim=[25, 50],
+        figsize=(20, 20),
+    )
     # adding color legend
-    bicolor_legend(ax, colorlist,percentile = percentile, legend_position = legend_position, tick_fontsize = tick_fontsize, label_fontsize = label_fontsize, x_label = x_label, y_label = y_label)
+    bicolor_legend(
+        ax,
+        colorlist,
+        percentile=percentile,
+        legend_position=legend_position,
+        tick_fontsize=tick_fontsize,
+        label_fontsize=label_fontsize,
+        x_label=x_label,
+        y_label=y_label,
+    )
     # remove axis
-    set_off_axis(ax) 
+    set_off_axis(ax)
     # title
-    ax.set_title(label = f'Mental Illness Score and {env_feature} Index by State', fontsize = title_fontsize)
+    ax.set_title(
+        label=f"Mental Illness Score and {env_feature} Index by State",
+        fontsize=title_fontsize,
+    )
 
     return None
 
@@ -165,9 +196,9 @@ def mikhailsirenko_colorscale(
 def assign_color_cells(
     df,
     env_col,
-    env_color_01 = 'c1_env',
-    mh_col = 'MH_Score',
-    mh_color_02 = 'c2_mh',
+    env_color_01="c1_env",
+    mh_col="MH_Score",
+    mh_color_02="c2_mh",
     percentile=np.linspace(0.33, 1, 3),
 ):
     """
@@ -187,8 +218,8 @@ def assign_color_cells(
     indf[mh_color_02] = indf[mh_col].apply(lambda x: assign_color_num(x))
     return indf
 
-def mat_subplots(n_row, n_col, fig_size=(20, 10)):
 
+def mat_subplots(n_row, n_col, fig_size=(20, 10)):
     """
     Create subplots using matplotlib
     """
@@ -279,6 +310,7 @@ def bicolor_legend(
 # urban_center_lst = ['Cary', 'Winston-Salem', 'Flint', 'New Bedford', 'Manchester', 'Des Moines']
 # map.one_function_monoMap_six_urban_centers(geo_data,merged_data, urban_center_lst = urban_center_lst)
 
+
 def one_function_monoMap_six_urban_centers(
     geo_path,
     merge_path,
@@ -290,19 +322,19 @@ def one_function_monoMap_six_urban_centers(
     percentile=np.linspace(0.2, 1, 5),
     colorlst=["#0000FF", "#FF0000"],
     mh_col="MH_Score",
-    mh_color_02="mh_color", 
-    urban_center_lst = [
-    "Cary",
-    "New Bedford",
-    "Flint",
-    "Winston-Salem",
-    "Manchester",
-    "Des Moines"],
+    mh_color_02="mh_color",
+    urban_center_lst=[
+        "Cary",
+        "New Bedford",
+        "Flint",
+        "Winston-Salem",
+        "Manchester",
+        "Des Moines",
+    ],
     fig_row=2,
     fig_col=3,
     fig_size=(18, 10),
     alpha=0.7,
-
     filter_col="Urban Center",
     edgecolor="black",
     linewidth=0.5,
@@ -321,11 +353,7 @@ def one_function_monoMap_six_urban_centers(
     focused_df = df_focused_env_feature(geo_df, env_feature, other_features)
     normalized_df = normalize_features(focused_df, env_feature, mh_feature)
     color_list = mono_mikhailsirenko_colorscale(percentile, colorlst)
-    color_df = mono_assign_color_cells(
-    normalized_df,
-    mh_col,
-    mh_color_02,
-    percentile)
+    color_df = mono_assign_color_cells(normalized_df, mh_col, mh_color_02, percentile)
 
     _, ax = plt.subplots(fig_row, fig_col, figsize=fig_size)
     for i in range(fig_row):
@@ -345,7 +373,8 @@ def one_function_monoMap_six_urban_centers(
                 linewidth=0.5,
             )
             set_off_axis(ax[i, j])
-            ax[i, j].set_title(f"Mental Illness Score of Urban Center: {urban_center_lst[n + j]}, {geo_df[geo_df['Urban Center'] == urban_center_lst[n + j]]['State'].values[0]}",
+            ax[i, j].set_title(
+                f"Mental Illness Score of Urban Center: {urban_center_lst[n + j]}, {geo_df[geo_df['Urban Center'] == urban_center_lst[n + j]]['State'].values[0]}",
                 fontsize=plot_title_fontsize,
             )
 
@@ -360,6 +389,7 @@ def one_function_monoMap_six_urban_centers(
     )
 
     return None
+
 
 def mono_mikhailsirenko_colorscale(
     percentile=np.linspace(0.2, 1, 5), color_list=["#808080", "#FF0000"]
@@ -409,6 +439,7 @@ def mono_assign_color_cells(
     indf = df.copy()
     indf[mh_color_02] = indf[mh_col].apply(lambda x: assign_color_num(x))
     return indf
+
 
 def map_urban_center(
     gdf,
