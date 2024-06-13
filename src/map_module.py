@@ -65,6 +65,22 @@ def normalize_features(df, env_feature, mh_feature='MH_Score'):
         indf[feature_name] = (indf[feature_name] - min_value) / (max_value - min_value)
     return indf
 
+
+def hex_to_Color(hexcode):
+    """
+    Helping function to convert hex color codes to rgb to Color object
+
+    Code from Mikhail Sirenko, slightly modified to fit our project
+    More information: https://github.com/mikhailsirenko/bivariate-choropleth/blob/main/bivariate-choropleth.ipynb
+    
+    """
+    rgb = ImageColor.getcolor(hexcode, "RGB")
+    rgb = [v / 255 for v in rgb]  # normalize RGB values to [0,1] for matplotlib
+    rgb = Color(
+        *rgb
+    )  # * unpacks the list into arguments, converts RGB values to Color object
+    return rgb  # color object is stored in rgba(4 values) format
+
 def mikhailsirenko_colorscale(
     percentile = np.linspace(0.33, 1, 3),
     color_list=['#ffb000', '#dc267f', '#648fff', '#785ef0']
@@ -76,17 +92,6 @@ def mikhailsirenko_colorscale(
     More information: https://github.com/mikhailsirenko/bivariate-choropleth/blob/main/bivariate-choropleth.ipynb
 
     """
-
-    def hex_to_Color(hexcode):
-        """
-        Helping function to convert hex color codes to rgb to Color object
-        """
-        rgb = ImageColor.getcolor(hexcode, "RGB")
-        rgb = [v / 255 for v in rgb]  # normalize RGB values to [0,1] for matplotlib
-        rgb = Color(
-            *rgb
-        )  # * unpacks the list into arguments, converts RGB values to Color object
-        return rgb  # color object is stored in rgba(4 values) format
 
     # basic colors for the gradient
     c00 = hex_to_Color(color_list[0])
