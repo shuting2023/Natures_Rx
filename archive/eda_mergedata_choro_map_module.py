@@ -182,7 +182,7 @@ def merged_choropleth_map(
     opacity=0.7,
     weight=1,
     zoom_start=5,
-    legend="Average Mental Health Prevalence (%)",
+    legend="Average Mental Health Prevalence (%)"
 ):
     """
     Input boundary_file_path, df need to be plotted, col_list to be shown in tooltip, lat, lon, geo_col, key, color, opacity, weight, zoom_start, legend,
