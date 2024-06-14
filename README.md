@@ -12,11 +12,9 @@ Objectives:
 * What is the impact of temperature and seasonal changes on mental health?
 
 ## Installation
-Using bash
+Using bash 
+
 git clone git@github.com:shuting2023/Natures_Rx.git
 
 ## Status
-Ongoing
-
-## License
-MIT
+Completed
