@@ -1,5 +1,5 @@
 # Natures_Rx
-An Analysis of Urban Green Spaces features and their Effect on Mental Wellbeing
+An analysis of urban green spaces features and their effect on mental wellbeing.
 
 ## Description
 Our project aims to examine the influence of green spaces in urban areas on mental health, recognizing the benefits these areas provide, such as stress reduction and improved mood. The urgency of this research is underscored by increasing urbanization and rising mental health issues. 
@@ -12,8 +12,6 @@ Objectives:
 * What is the impact of temperature and seasonal changes on mental health?
 
 ## Installation
-Using bash 
-
 git clone git@github.com:shuting2023/Natures_Rx.git
 
 ## Status
